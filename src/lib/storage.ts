@@ -87,10 +87,12 @@ export function loadStoredState(): AppState {
         ...getInitialState().cheatSheets,
         ...(parsed.cheatSheets || {}),
       },
-      memeCaptions:
-        parsed.memeCaptions && parsed.memeCaptions.length > 0
-          ? parsed.memeCaptions
-          : getDefaultMemeCaptions(),
+      memeCaptions: (() => {
+        const defaults = getDefaultMemeCaptions();
+        if (!parsed.memeCaptions || parsed.memeCaptions.length === 0) return defaults;
+        const userCreated = parsed.memeCaptions.filter((c: any) => c.created_by === 'user');
+        return [...defaults, ...userCreated];
+      })(),
       memeEvents: parsed.memeEvents || [],
       customTemplates: parsed.customTemplates || [],
     };

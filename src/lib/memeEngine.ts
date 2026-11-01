@@ -94,14 +94,20 @@ export function getMeme(
     : getDefaultMemeCaptions();
 
   // 1. Filter by event and enabled
-  let pool = captions.filter((c) => c.event === event && c.enabled);
+  let pool = captions.filter((c) => {
+    if (!c.enabled) return false;
+    if (c.event === event) return true;
+    if ((event === 'early_start' || event === 'ahead') && (c.event === 'early_start' || c.event === 'ahead')) return true;
+    if (event.startsWith('streak_') && (c.event === 'streak_milestone' || c.event.startsWith('streak_'))) return true;
+    return false;
+  });
 
   if (pool.length === 0) {
     // If specific streak or behind event has no exact match, fallback to general
     if (event.startsWith('streak_')) {
-      pool = captions.filter((c) => c.event === 'day_complete' && c.enabled);
+      pool = captions.filter((c) => (c.event === 'streak_milestone' || c.event === 'day_complete') && c.enabled);
     } else if (event.startsWith('behind_')) {
-      pool = captions.filter((c) => c.event === 'behind_3' && c.enabled);
+      pool = captions.filter((c) => (c.event === 'behind_5plus' || c.event === 'behind_3' || c.event === 'behind_1') && c.enabled);
     }
     if (pool.length === 0) return null;
   }

@@ -28,11 +28,16 @@ export const MemeGallery: React.FC = () => {
     'needed_solution',
     'skipped',
     'day_complete',
+    'ahead',
     'behind_1',
     'behind_3',
     'behind_5plus',
-    'streak_7',
+    'streak_milestone',
+    'level_up',
     'boss_win',
+    'boss_lose',
+    'mock_day',
+    'revisit_due',
     'landing',
   ];
 
