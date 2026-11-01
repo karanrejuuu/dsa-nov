@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Flame,
   Zap,
@@ -18,11 +18,15 @@ import {
   Sparkles,
   ArrowRight,
   ShieldAlert,
+  Smile,
+  ShieldCheck,
 } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { ProblemLink } from '@/components/ProblemLink';
 import { getLevelInfo } from '@/lib/gameLogic';
 import { Problem, ProblemStatus } from '@/types';
+import { getMeme, MemeSelectionResult } from '@/lib/memeEngine';
+import { MemeCard } from '@/components/MemeCard';
 
 export const TodayView: React.FC = () => {
   const {
@@ -36,17 +40,30 @@ export const TodayView: React.FC = () => {
     resetFocusTimer,
     problemSplitTimes,
     updateProblemStatus,
+    requestSkipProblem,
     openProblem,
     completeDay,
     useStreakFreeze,
+    likeCaption,
+    hideCaption,
   } = useApp();
 
   const [expandedBacklog, setExpandedBacklog] = useState(false);
   const [editingNotesId, setEditingNotesId] = useState<number | null>(null);
   const [noteText, setNoteText] = useState('');
+  const [showDailyMeme, setShowDailyMeme] = useState(true);
+  const [dailyMeme, setDailyMeme] = useState<MemeSelectionResult | null>(null);
 
   const currentDay = realityStats.currentDay;
   const levelInfo = getLevelInfo(totalXP);
+
+  // Pick Daily Meme (keyed by day, 7-day no-repeat)
+  useEffect(() => {
+    const meme =
+      getMeme('day_complete', state, { ignoreFrequency: true }) ||
+      getMeme('landing', state, { ignoreFrequency: true });
+    setDailyMeme(meme);
+  }, [currentDay, state.settings.meme_intensity]);
 
   // Today's scheduled problems
   const todayProblems = state.problems.filter((p) => p.day === currentDay);
@@ -166,6 +183,43 @@ export const TodayView: React.FC = () => {
         </div>
       </div>
 
+      {/* Meme of the Day Card */}
+      {dailyMeme && (
+        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-3.5 sm:p-4 shadow-lg">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-amber-400">
+              <Smile className="w-4 h-4" />
+              <span>MEME OF THE DAY (DAY {currentDay})</span>
+            </div>
+            <button
+              onClick={() => setShowDailyMeme(!showDailyMeme)}
+              className="text-[11px] font-mono text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer"
+            >
+              <span>{showDailyMeme ? 'Collapse' : 'Expand'}</span>
+              {showDailyMeme ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </button>
+          </div>
+
+          <AnimatePresence>
+            {showDailyMeme && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden pt-1"
+              >
+                <MemeCard
+                  caption={dailyMeme.caption}
+                  template={dailyMeme.template}
+                  onLike={likeCaption}
+                  onHide={hideCaption}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+
       {/* 2-Hour Focus Timer */}
       <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -215,7 +269,7 @@ export const TodayView: React.FC = () => {
       </div>
 
       {/* Catch-Up Banner (Unfinished Problems from Previous Days) */}
-      {backlogProblems.length > 0 && (
+      {backlogProblems.length > 0 ? (
         <div className="bg-rose-500/10 border-2 border-rose-500/40 rounded-2xl p-4 text-slate-200">
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-2.5">
@@ -260,6 +314,14 @@ export const TodayView: React.FC = () => {
               ))}
             </div>
           )}
+        </div>
+      ) : (
+        <div className="bg-slate-900/40 border border-slate-800/80 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs font-mono text-slate-400">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <span className="text-slate-300">Backlog: 0 problems</span>
+          </div>
+          <span className="text-slate-500 italic">Nothing owed. Suspicious.</span>
         </div>
       )}
 
@@ -433,11 +495,11 @@ export const TodayView: React.FC = () => {
                       </button>
 
                       <button
-                        onClick={() => updateProblemStatus(prob.id, 'skipped')}
+                        onClick={() => requestSkipProblem(prob.id)}
                         className={`py-2 px-2.5 rounded-xl text-xs font-bold border flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                           status === 'skipped'
-                            ? 'bg-slate-700 text-slate-300 border-slate-500'
-                            : 'bg-slate-800/70 border-slate-700 text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                            ? 'bg-rose-950/40 text-rose-300 border-rose-500/60'
+                            : 'bg-slate-800/70 border-slate-700 text-slate-400 hover:bg-slate-800 hover:text-rose-400'
                         }`}
                       >
                         <span>Skipped (0 XP)</span>
@@ -512,10 +574,10 @@ export const TodayView: React.FC = () => {
           <Sparkles className="w-5 h-5" />
           <span>
             {isDayCompleted
-              ? `Day ${currentDay} Completed! (+30 XP Claimed)`
+              ? `Day ${currentDay} Locked In (+30 XP Claimed)`
               : allTodayMarked
-              ? `Complete Day ${currentDay} Mission (+30 Bonus XP)`
-              : `Mark All ${todayProblems.length} Problems to Complete Day`}
+              ? `Lock it in (+30 Bonus XP)`
+              : `Mark All ${todayProblems.length} Problems to Lock in`}
           </span>
         </button>
 

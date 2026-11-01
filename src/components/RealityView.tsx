@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Skull,
@@ -14,12 +14,15 @@ import {
   Layers,
   ChevronRight,
   ShieldAlert,
+  RotateCcw,
 } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { FEAR_QUOTES, AGE_30_SCENARIOS } from '@/lib/realityCheck';
+import { getMeme, MemeSelectionResult } from '@/lib/memeEngine';
+import { MemeCard } from '@/components/MemeCard';
 
 export const RealityView: React.FC = () => {
-  const { realityStats, state, updateSettings } = useApp();
+  const { realityStats, state, updateSettings, likeCaption, hideCaption } = useApp();
   const [realitySection, setRealitySection] = useState<'age30' | 'pace' | 'review'>('age30');
   const [age30Path, setAge30Path] = useState<'b' | 'a' | 'both'>('b');
   const [weeklyCommitmentInput, setWeeklyCommitmentInput] = useState(
@@ -30,6 +33,33 @@ export const RealityView: React.FC = () => {
   // Pick quote based on day
   const quoteIndex = (realityStats.currentDay - 1) % FEAR_QUOTES.length;
   const currentQuote = FEAR_QUOTES[quoteIndex];
+
+  const daysBehind = realityStats.daysBehind;
+  const isSevereBehind = daysBehind >= 7;
+
+  // Reality Check Meme: sits on top of the hard numbers
+  // 7+ days switches completely to gentle self-deprecating tone per spec
+  const realityMeme = useMemo(() => {
+    if (daysBehind >= 7) {
+      return (
+        getMeme('behind_7plus', state, { ignoreFrequency: true, forceTone: 'self' }) ||
+        getMeme('behind_3', state, { ignoreFrequency: true, forceTone: 'self' })
+      );
+    } else if (daysBehind >= 5) {
+      return getMeme('behind_5plus', state, { ignoreFrequency: true });
+    } else if (daysBehind >= 3) {
+      return getMeme('behind_3', state, { ignoreFrequency: true });
+    } else if (daysBehind >= 1) {
+      return getMeme('behind_1', state, { ignoreFrequency: true });
+    } else {
+      return getMeme('day_complete', state, { ignoreFrequency: true, forceTone: 'hype' });
+    }
+  }, [daysBehind, state.settings.meme_intensity]);
+
+  const handleStartRecovery = () => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    updateSettings({ start_date: todayStr });
+  };
 
   const handleSaveCommitment = () => {
     if (!weeklyCommitmentInput.trim()) return;
@@ -42,7 +72,42 @@ export const RealityView: React.FC = () => {
 
   return (
     <div className="space-y-4 pb-20">
-      {/* 1. Top Severity Banner (Clean, High Impact) */}
+      {/* 0. Reality Check Meme (Prominent on Top) */}
+      {realityMeme && (
+        <div className="space-y-2">
+          <MemeCard
+            caption={realityMeme.caption}
+            template={realityMeme.template}
+            onLike={likeCaption}
+            onHide={hideCaption}
+          />
+
+          {/* Gentle Recovery Callout for 7+ Days Behind */}
+          {isSevereBehind && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-amber-500/10 border-2 border-amber-500/40 rounded-2xl p-4 text-center space-y-2"
+            >
+              <div className="text-xs font-mono font-bold text-amber-400 uppercase tracking-wider flex items-center justify-center gap-1.5">
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>We don&apos;t talk about last week</span>
+              </div>
+              <p className="text-xs text-slate-300 max-w-sm mx-auto">
+                No guilt, no lectures. Reset your timeline to today, lower the daily burden, and pick up 1 problem now.
+              </p>
+              <button
+                onClick={handleStartRecovery}
+                className="py-2 px-5 bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-950 font-bold text-xs rounded-xl shadow-md shadow-amber-400/20 hover:scale-[1.02] cursor-pointer transition-all"
+              >
+                Start Recovery
+              </button>
+            </motion.div>
+          )}
+        </div>
+      )}
+
+      {/* 1. Hard Data Severity Banner (Directly Below Meme) */}
       <div
         className={`border-2 rounded-2xl p-4 sm:p-5 shadow-lg transition-all ${
           realityStats.escalationCopy.severity === 'critical'

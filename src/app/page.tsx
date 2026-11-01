@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { TodayView } from '@/components/TodayView';
 import { SkillTreeView } from '@/components/SkillTreeView';
@@ -10,24 +10,63 @@ import { BottomNav, MainTab } from '@/components/BottomNav';
 import { ReturnModal } from '@/components/ReturnModal';
 import { LevelUpModal } from '@/components/LevelUpModal';
 import { StuckNudgeModal } from '@/components/StuckNudgeModal';
+import { MemeEventModal } from '@/components/MemeEventModal';
+import { SkipConfirmDialog } from '@/components/SkipConfirmDialog';
+import { LandingHero } from '@/components/LandingHero';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<MainTab>('today');
-  const { realityStats } = useApp();
+  const [showLanding, setShowLanding] = useState<boolean | null>(null);
+
+  const {
+    realityStats,
+    activeEventMeme,
+    isEventMemeFullScreen,
+    closeEventMeme,
+    likeCaption,
+    hideCaption,
+    skipConfirmProblem,
+    cancelSkipProblem,
+    confirmSkipProblem,
+  } = useApp();
+
+  useEffect(() => {
+    // Check if user has already visited/started
+    const started = localStorage.getItem('dsa_quest_started_grind');
+    if (started === 'true') {
+      setShowLanding(false);
+    } else {
+      setShowLanding(true);
+    }
+  }, []);
+
+  const handleStartGrind = () => {
+    localStorage.setItem('dsa_quest_started_grind', 'true');
+    setShowLanding(false);
+  };
+
+  // If still hydrating or showing landing page hero
+  if (showLanding === true) {
+    return <LandingHero onStartGrind={handleStartGrind} />;
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-cyan-500 selection:text-slate-950">
       {/* Top Navbar */}
       <header className="sticky top-0 z-30 bg-slate-950/85 backdrop-blur-md border-b border-slate-800/80 px-4 py-3">
         <div className="max-w-md mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowLanding(true)}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer text-left"
+            title="Click to view Landing Memes"
+          >
             <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-cyan-500 to-emerald-400 flex items-center justify-center font-black text-slate-950 text-xs shadow-md shadow-cyan-500/20">
               DQ
             </div>
             <span className="font-mono font-bold text-sm tracking-tight text-white">
               DSA QUEST
             </span>
-          </div>
+          </button>
 
           <div className="flex items-center gap-2 text-xs font-mono">
             <span className="text-slate-400">Target:</span>
@@ -57,6 +96,23 @@ export default function Home() {
       <ReturnModal />
       <LevelUpModal />
       <StuckNudgeModal />
+
+      {/* Meme Feedback Modal (Popup / Fullscreen) */}
+      <MemeEventModal
+        memeData={activeEventMeme}
+        onClose={closeEventMeme}
+        onLike={likeCaption}
+        onHide={hideCaption}
+        isFullScreen={isEventMemeFullScreen}
+      />
+
+      {/* Skip Confirmation Dialog (Harshest Roast Protocol) */}
+      <SkipConfirmDialog
+        problem={skipConfirmProblem}
+        isOpen={!!skipConfirmProblem}
+        onCancel={cancelSkipProblem}
+        onConfirmSkip={confirmSkipProblem}
+      />
     </div>
   );
 }

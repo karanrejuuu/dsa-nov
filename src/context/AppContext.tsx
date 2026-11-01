@@ -13,6 +13,9 @@ import {
   BossCompletion,
   MockInterviewResult,
   AppState,
+  MemeEventName,
+  MemeTone,
+  MemeCaption,
 } from '@/types';
 import {
   loadStoredState,
@@ -30,7 +33,7 @@ import {
   getNodeSummaries,
 } from '@/lib/gameLogic';
 import { computeRealityStats, RealityStats } from '@/lib/realityCheck';
-import { soundManager } from '@/lib/sound';
+import { getMeme, preloadMemeImages, MemeSelectionResult, resolveMemeTemplate } from '@/lib/memeEngine';
 import { syncProgressToSupabase, syncDayCompletionToSupabase, syncXPEventToSupabase } from '@/lib/supabase';
 
 interface AppContextType {
@@ -46,6 +49,22 @@ interface AppContextType {
   focusTimerSeconds: number;
   isFocusTimerRunning: boolean;
   problemSplitTimes: Record<number, number>;
+
+  // Meme features
+  activeEventMeme: MemeSelectionResult | null;
+  isEventMemeFullScreen: boolean;
+  triggerMeme: (event: MemeEventName, options?: { forceTone?: MemeTone; ignoreFrequency?: boolean; isFullScreen?: boolean }) => void;
+  closeEventMeme: () => void;
+  likeCaption: (captionId: string) => void;
+  hideCaption: (captionId: string) => void;
+  addCustomCaption: (caption: MemeCaption) => void;
+
+  // Skip dialog
+  skipConfirmProblem: Problem | null;
+  requestSkipProblem: (problemId: number) => void;
+  cancelSkipProblem: () => void;
+  confirmSkipProblem: () => void;
+
   // Actions
   openProblem: (problem: Problem) => void;
   closeReturnModal: () => void;
@@ -76,7 +95,6 @@ const AppContext = createContext<AppContextType | null>(null);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, setState] = useState<AppState>(getInitialState);
-  const [isClientMounted, setIsClientMounted] = useState(false);
   const [activeProblem, setActiveProblem] = useState<Problem | null>(null);
   const [returnModalProblem, setReturnModalProblem] = useState<Problem | null>(null);
   const [levelUpData, setLevelUpData] = useState<{ level: number; name: string } | null>(null);
@@ -87,18 +105,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isFocusTimerRunning, setIsFocusTimerRunning] = useState(false);
   const [problemSplitTimes, setProblemSplitTimes] = useState<Record<number, number>>({});
 
+  // Meme Modal State
+  const [activeEventMeme, setActiveEventMeme] = useState<MemeSelectionResult | null>(null);
+  const [isEventMemeFullScreen, setIsEventMemeFullScreen] = useState(false);
+
+  // Skip Confirmation State
+  const [skipConfirmProblem, setSkipConfirmProblem] = useState<Problem | null>(null);
+
   const pendingProblemIdRef = useRef<number | null>(null);
 
   // Hydrate from localStorage on client mount
   useEffect(() => {
-    setIsClientMounted(true);
     setState(loadStoredState());
   }, []);
-
-  // Sync sound setting
-  useEffect(() => {
-    soundManager.setEnabled(state.settings.sound_enabled);
-  }, [state.settings.sound_enabled]);
 
   // Persist state changes
   useEffect(() => {
@@ -149,6 +168,75 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, []);
 
+  // Trigger Meme Engine Helper
+  const triggerMeme = useCallback(
+    (
+      event: MemeEventName,
+      options?: { forceTone?: MemeTone; ignoreFrequency?: boolean; isFullScreen?: boolean }
+    ) => {
+      const selected = getMeme(event, state, options);
+      if (!selected) return;
+
+      setIsEventMemeFullScreen(!!options?.isFullScreen);
+      setActiveEventMeme(selected);
+
+      // Record in meme_events
+      setState((prev) => {
+        const now = new Date().toISOString();
+        const newRecord = {
+          id: `me-${Date.now()}`,
+          caption_id: selected.caption.id,
+          event,
+          shown_at: now,
+          liked: false,
+          hidden: false,
+        };
+
+        const updatedCaptions = (prev.memeCaptions || []).map((c) =>
+          c.id === selected.caption.id ? { ...c, times_shown: (c.times_shown || 0) + 1 } : c
+        );
+
+        return {
+          ...prev,
+          memeEvents: [newRecord, ...(prev.memeEvents || [])],
+          memeCaptions: updatedCaptions,
+        };
+      });
+    },
+    [state]
+  );
+
+  const closeEventMeme = useCallback(() => {
+    setActiveEventMeme(null);
+    setIsEventMemeFullScreen(false);
+  }, []);
+
+  const likeCaption = useCallback((captionId: string) => {
+    setState((prev) => ({
+      ...prev,
+      memeEvents: (prev.memeEvents || []).map((e) =>
+        e.caption_id === captionId ? { ...e, liked: !e.liked } : e
+      ),
+    }));
+  }, []);
+
+  const hideCaption = useCallback((captionId: string) => {
+    setState((prev) => ({
+      ...prev,
+      memeEvents: (prev.memeEvents || []).map((e) =>
+        e.caption_id === captionId ? { ...e, hidden: true } : e
+      ),
+    }));
+    closeEventMeme();
+  }, [closeEventMeme]);
+
+  const addCustomCaption = useCallback((caption: MemeCaption) => {
+    setState((prev) => ({
+      ...prev,
+      memeCaptions: [caption, ...(prev.memeCaptions || [])],
+    }));
+  }, []);
+
   // Timer Tick: handles focus timer, split timers, and 25-minute stuck nudge
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
@@ -159,10 +247,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (activeProblem) {
           setProblemSplitTimes((prev) => {
             const current = (prev[activeProblem.id] || 0) + 1;
-            // 25-minute stuck nudge check (1500 seconds)
             if (current === 1500) {
               setIsStuckNudgeOpen(true);
-              soundManager.playBossAlert();
             }
             return { ...prev, [activeProblem.id]: current };
           });
@@ -195,15 +281,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, [state.problems]);
 
-  // 8.1 Click-through behavior
+  // 8.1 Click-through behavior & Image Preloading
   const openProblem = useCallback(
     (problem: Problem) => {
-      soundManager.playClick();
-
-      // Track return modal
       pendingProblemIdRef.current = problem.id;
       setActiveProblem(problem);
       setIsFocusTimerRunning(true);
+
+      // Preload next likely meme images (solved, hint, solution, skipped)
+      const likelyEvents: MemeEventName[] = ['solved_clean', 'solved_hint', 'needed_solution', 'skipped'];
+      const urlsToPreload: string[] = [];
+      likelyEvents.forEach((ev) => {
+        const candidate = getMeme(ev, state, { ignoreFrequency: true });
+        if (candidate?.template?.url) {
+          urlsToPreload.push(candidate.template.url);
+        }
+      });
+      preloadMemeImages(urlsToPreload);
 
       setState((prev) => {
         const existing = prev.progress[problem.id];
@@ -232,13 +326,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return next;
       });
 
-      // Open LC in new tab
       if (typeof window !== 'undefined') {
         window.open(problem.url, '_blank', 'noopener,noreferrer');
       }
     },
-    []
+    [state]
   );
+
+  // Skip Confirmation Flow
+  const requestSkipProblem = useCallback((problemId: number) => {
+    const prob = state.problems.find((p) => p.id === problemId);
+    if (prob) {
+      setSkipConfirmProblem(prob);
+    }
+  }, [state.problems]);
+
+  const cancelSkipProblem = useCallback(() => {
+    setSkipConfirmProblem(null);
+  }, []);
+
+  const confirmSkipProblem = useCallback(() => {
+    if (!skipConfirmProblem) return;
+    const pId = skipConfirmProblem.id;
+    setSkipConfirmProblem(null);
+
+    // Apply skip status
+    updateProblemStatus(pId, 'skipped');
+  }, [skipConfirmProblem]);
 
   // Update Problem Status
   const updateProblemStatus = useCallback(
@@ -248,16 +362,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       const oldTotalXP = totalXP;
       const oldLevelInfo = getLevelInfo(oldTotalXP);
-
       const existingProg = state.progress[problemId];
       const now = new Date().toISOString();
 
-      // Check if re-solving a revisit clean
       const isRevisitProblem = state.revisits.some(
         (r) => r.problem_id === problemId && !r.graduated
       );
       const isCleanRevisit = isRevisitProblem && status === 'solved_clean';
-
       const gainedXP = calculateProblemXP(problem.difficulty, status, isCleanRevisit);
 
       setState((prev) => {
@@ -279,7 +390,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           last_attempt_at: now,
         };
 
-        // XP Events
         const newXpEvents = [...prev.xpEvents];
         if (gainedXP > 0) {
           const xpEvt: XPEvent = {
@@ -293,13 +403,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           syncXPEventToSupabase(xpEvt);
         }
 
-        // Revisits: auto-schedule at +1, +3, +7 days if solved with hint or needed solution
         let newRevisits = [...prev.revisits];
         if (status === 'solved_hint' || status === 'needed_solution') {
           const schedules = createRevisitSchedules(problemId, realityStats.currentDay);
           newRevisits.push(...schedules);
         } else if (status === 'solved_clean' && isRevisitProblem) {
-          // Graduate active revisit
           newRevisits = newRevisits.map((r) =>
             r.problem_id === problemId ? { ...r, graduated: true } : r
           );
@@ -319,27 +427,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return next;
       });
 
-      // Feedback: sound + confetti + level up
-      if (['solved_clean', 'solved_hint', 'needed_solution'].includes(status)) {
-        soundManager.playSuccess();
+      // Feedback & Memes
+      if (status === 'solved_clean') {
         triggerConfetti('small');
+        triggerMeme('solved_clean', { forceTone: 'hype' });
+      } else if (status === 'solved_hint') {
+        triggerMeme('solved_hint', { forceTone: 'self' });
+      } else if (status === 'needed_solution') {
+        triggerMeme('needed_solution', { forceTone: 'self' });
+      } else if (status === 'skipped') {
+        // Harshest roast meme!
+        triggerMeme('skipped', { forceTone: 'roast', ignoreFrequency: true });
+      }
 
-        const newTotalXP = oldTotalXP + gainedXP;
-        const newLevelInfo = getLevelInfo(newTotalXP);
-        if (newLevelInfo.level > oldLevelInfo.level) {
-          setLevelUpData({ level: newLevelInfo.level, name: newLevelInfo.name });
-          soundManager.playLevelUp();
-          triggerConfetti('large');
-        }
+      // Level-up moment
+      const newTotalXP = oldTotalXP + gainedXP;
+      const newLevelInfo = getLevelInfo(newTotalXP);
+      if (newLevelInfo.level > oldLevelInfo.level) {
+        setLevelUpData({ level: newLevelInfo.level, name: newLevelInfo.name });
+        triggerConfetti('large');
+        triggerMeme('level_up', { forceTone: 'hype', ignoreFrequency: true, isFullScreen: true });
       }
     },
-    [state.problems, state.progress, state.revisits, totalXP, problemSplitTimes, realityStats.currentDay, triggerConfetti]
+    [state.problems, state.progress, state.revisits, totalXP, problemSplitTimes, realityStats.currentDay, triggerConfetti, triggerMeme]
   );
 
   // Complete Day
   const completeDay = useCallback(
     (dayNumber: number): boolean => {
-      // Check if all today's problems are marked (not not_started or in_progress)
       const dayProblems = state.problems.filter((p) => p.day === dayNumber);
       const allMarked = dayProblems.every((p) => {
         const prog = state.progress[p.id];
@@ -357,7 +472,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         used_freeze: false,
       };
 
-      // Bonus XP for day completion
       const bonusXP: XPEvent = {
         id: `day-${dayNumber}-${Date.now()}`,
         amount: 30,
@@ -365,12 +479,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         created_at: now,
       };
 
-      setState((prev) => {
-        // Calculate streak freeze earned per 7-day streak
-        const currentFreezeCount = prev.settings.streak_freezes_available;
-        const newStreakVal = currentStreak + 1;
-        const awardedFreeze = newStreakVal % 7 === 0 ? 1 : 0;
+      const newStreakVal = currentStreak + 1;
+      const awardedFreeze = newStreakVal % 7 === 0 ? 1 : 0;
 
+      setState((prev) => {
+        const currentFreezeCount = prev.settings.streak_freezes_available;
         const next = {
           ...prev,
           dayCompletions: {
@@ -389,14 +502,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return next;
       });
 
-      soundManager.playSuccess();
       triggerConfetti('large');
+
+      // Streak milestone checks
+      if ([3, 7, 14, 21, 30].includes(newStreakVal)) {
+        triggerMeme(`streak_${newStreakVal}` as MemeEventName, {
+          forceTone: 'hype',
+          ignoreFrequency: true,
+          isFullScreen: true,
+        });
+      } else {
+        triggerMeme('day_complete', { forceTone: 'hype', ignoreFrequency: true });
+      }
+
       return true;
     },
-    [state.problems, state.progress, currentStreak, triggerConfetti]
+    [state.problems, state.progress, currentStreak, triggerConfetti, triggerMeme]
   );
 
-  // Use Streak Freeze
   const useStreakFreeze = useCallback(
     (dayNumber: number) => {
       if (state.settings.streak_freezes_available <= 0) return;
@@ -419,13 +542,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           streak_freezes_available: Math.max(0, prev.settings.streak_freezes_available - 1),
         },
       }));
-
-      soundManager.playSuccess();
     },
     [state.settings.streak_freezes_available]
   );
 
-  // Update Problem URL (Section 8.1: editable in detail sheet if LC changes slug)
   const updateProblemUrl = useCallback((problemId: number, newUrl: string) => {
     setState((prev) => ({
       ...prev,
@@ -433,7 +553,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   }, []);
 
-  // Update Settings
   const updateSettings = useCallback((newSettings: Partial<UserSettings>) => {
     setState((prev) => ({
       ...prev,
@@ -444,7 +563,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   }, []);
 
-  // Update Cheat Sheet
   const updateCheatSheet = useCallback((nodeKey: string, bullets: string[]) => {
     setState((prev) => ({
       ...prev,
@@ -455,7 +573,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   }, []);
 
-  // Record Boss Fight Victory
   const recordBossFight = useCallback(
     (nodeKey: string, problemId: number, timeTakenSeconds: number, passed: boolean) => {
       const now = new Date().toISOString();
@@ -484,14 +601,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }));
 
       if (passed) {
-        soundManager.playSuccess();
         triggerConfetti('large');
+        triggerMeme('boss_win', { forceTone: 'hype', ignoreFrequency: true, isFullScreen: true });
+      } else {
+        triggerMeme('boss_lose', { forceTone: 'self', ignoreFrequency: true });
       }
     },
-    [triggerConfetti]
+    [triggerConfetti, triggerMeme]
   );
 
-  // Record Mock Interview
   const recordMockInterview = useCallback(
     (result: MockInterviewResult) => {
       const now = new Date().toISOString();
@@ -514,16 +632,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         xpEvents: [...prev.xpEvents, mockXP],
       }));
 
-      soundManager.playSuccess();
       triggerConfetti('large');
+      triggerMeme('mock_day', { forceTone: 'self', ignoreFrequency: true });
     },
-    [triggerConfetti]
+    [triggerConfetti, triggerMeme]
   );
 
-  // Timer controls
   const toggleFocusTimer = useCallback(() => {
     setIsFocusTimerRunning((prev) => !prev);
-    soundManager.playClick();
   }, []);
 
   const resetFocusTimer = useCallback(() => {
@@ -531,12 +647,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsFocusTimerRunning(false);
   }, []);
 
-  // Modals
   const closeReturnModal = useCallback(() => setReturnModalProblem(null), []);
   const closeLevelUpModal = useCallback(() => setLevelUpData(null), []);
   const closeStuckNudge = useCallback(() => setIsStuckNudgeOpen(false), []);
 
-  // Export / Import / Reset
   const exportData = useCallback(() => exportStateAsJSON(state), [state]);
 
   const importData = useCallback((jsonStr: string) => {
@@ -564,6 +678,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         streak_freezes_available: 0,
         sound_enabled: false,
         weekly_commitment: '',
+        meme_intensity: 'normal' as const,
+        meme_frequency: 0.85,
+        show_gallery: true,
       },
     };
     setState(init);
@@ -585,6 +702,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         focusTimerSeconds,
         isFocusTimerRunning,
         problemSplitTimes,
+        activeEventMeme,
+        isEventMemeFullScreen,
+        triggerMeme,
+        closeEventMeme,
+        likeCaption,
+        hideCaption,
+        addCustomCaption,
+        skipConfirmProblem,
+        requestSkipProblem,
+        cancelSkipProblem,
+        confirmSkipProblem,
         openProblem,
         closeReturnModal,
         closeLevelUpModal,

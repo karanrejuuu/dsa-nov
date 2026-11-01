@@ -1,0 +1,338 @@
+[
+  {
+    "id": "mc-01",
+    "event": "solved_clean",
+    "template": "Drake Hotline Bling",
+    "lines": ["LOOKING AT LEETCODE SOLUTIONS", "SOLVING IT IN O(N) FIRST TRY CLEAN"],
+    "tone": "hype"
+  },
+  {
+    "id": "mc-02",
+    "event": "solved_clean",
+    "template": "Buff Doge vs. Cheems",
+    "lines": ["ME AFTER INVERTING A BINARY TREE CLEAN", "MY INTERVIEWER WHO THOUGHT HE TRAPPED ME"],
+    "tone": "hype"
+  },
+  {
+    "id": "mc-03",
+    "event": "solved_clean",
+    "template": "Absolute Cinema",
+    "lines": ["WHEN THE TWO POINTER APPROACH", "HITS 0MS RUNTIME AND BEATS 99%"],
+    "tone": "hype"
+  },
+  {
+    "id": "mc-04",
+    "event": "solved_clean",
+    "template": "You know, I'm something of a scientist myself",
+    "lines": ["ONE TWO-SUM SUBMISSION WITHOUT RE-READING THE DOCS", "I AM READY FOR GOOGLE L5"],
+    "tone": "hype"
+  },
+  {
+    "id": "mc-05",
+    "event": "solved_hint",
+    "template": "Surprised Pikachu",
+    "lines": ["USES HASHMAP WITHOUT CHECKING CORNER CASES", "TIME LIMIT EXCEEDED ON TESTCASE 49/50"],
+    "tone": "self"
+  },
+  {
+    "id": "mc-06",
+    "event": "solved_hint",
+    "template": "Hide the Pain Harold",
+    "lines": ["TECHNICALLY I SOLVED IT", "I JUST NEEDED NEETCODE TO DRAW THE ENTIRE RECURSION TREE FIRST"],
+    "tone": "self"
+  },
+  {
+    "id": "mc-07",
+    "event": "solved_hint",
+    "template": "Bernie I Am Once Again Asking For Your Support",
+    "lines": ["I AM ONCE AGAIN ASKING", "FOR A HINT ON SLIDING WINDOW INVARIANTS"],
+    "tone": "self"
+  },
+  {
+    "id": "mc-08",
+    "event": "needed_solution",
+    "template": "Clown Applying Makeup",
+    "lines": ["I WILL SOLVE THIS DP HARD IN 10 MINS", "LET ME JUST SKIM THE FIRST LINE OF DISCUSSION", "LET ME JUST COPY PASTE THE RECURRENCE RELATION", "I AM AN INDEPENDENT ALGORITHM SURGEON"],
+    "tone": "self"
+  },
+  {
+    "id": "mc-09",
+    "event": "needed_solution",
+    "template": "Panik Kalm Panik",
+    "lines": ["MEDIUM GRAPH PROBLEM", "IT S JUST BFS IN A GRID", "IT S DIJKSTRA ON A DIRECTED ACYCLIC TIME DIMENSION"],
+    "tone": "self"
+  },
+  {
+    "id": "mc-10",
+    "event": "needed_solution",
+    "template": "This Is Fine",
+    "lines": ["STARING AT EDIT DISTANCE DP MATRIX FOR 40 MINUTES", "MY BRAIN EXPANDING BY ZERO BYTES"],
+    "tone": "self"
+  },
+  {
+    "id": "mc-11",
+    "event": "skipped",
+    "template": "UNO Draw 25 Cards",
+    "lines": ["SOLVE 3 PROBLEMS TODAY", "OR DRAW 25 CARDS AND ACCEPT A 3.5 LPA WITCH OFFER"],
+    "tone": "roast"
+  },
+  {
+    "id": "mc-12",
+    "event": "skipped",
+    "template": "Two Buttons",
+    "lines": ["SPEND 25 MIN ON LINKED LIST", "SCROLL REELS AND BE COOKED AT 30", "SKIPPED AGAIN"],
+    "tone": "roast"
+  },
+  {
+    "id": "mc-13",
+    "event": "skipped",
+    "template": "Woman Yelling At Cat",
+    "lines": ["YOU HAD 2 HOURS AND PROMISED FAANG PLACEMENTS", "I DIDN T FEEL THE VIBE TODAY"],
+    "tone": "roast"
+  },
+  {
+    "id": "mc-14",
+    "event": "skipped",
+    "template": "Disaster Girl",
+    "lines": ["MY FAANG PLACEMENT DREAMS", "ME CLICKING SKIP AFTER READING 3 LINES OF DESCRIPTION"],
+    "tone": "roast"
+  },
+  {
+    "id": "mc-15",
+    "event": "skipped",
+    "template": "Bike Fall",
+    "lines": ["SKIPS TODAY'S TWO POINTER MISSION", "WHY DO BANGALORE COMPANIES GHOST MY RESUME?"],
+    "tone": "roast"
+  },
+  {
+    "id": "mc-16",
+    "event": "skipped",
+    "template": "Megamind peeking",
+    "lines": ["NO OFFER LETTERS?", "THATS BECAUSE YOU KEEP SKIPPING HARD PROBLEMS"],
+    "tone": "roast"
+  },
+  {
+    "id": "mc-17",
+    "event": "day_complete",
+    "template": "Epic Handshake",
+    "lines": ["ME", "CONSISTENCY", "DAILY MISSION DESTROYED"],
+    "tone": "hype"
+  },
+  {
+    "id": "mc-18",
+    "event": "day_complete",
+    "template": "Absolute Cinema",
+    "lines": ["CLEARED ALL 3 PROBLEMS", "BEFORE 10 PM WITH ZERO EXCUSES"],
+    "tone": "hype"
+  },
+  {
+    "id": "mc-19",
+    "event": "day_complete",
+    "template": "Roll Safe Think About It",
+    "lines": ["CAN'T BE TERRIFIED OF CAMPUS PLACEMENTS", "IF YOU CRUSH 3 PROBLEMS EVERY SINGLE DAY"],
+    "tone": "hype"
+  },
+  {
+    "id": "mc-20",
+    "event": "early_start",
+    "template": "Tuxedo Winnie The Pooh",
+    "lines": ["SOLVING DSA AT 11:58 PM IN PANIC", "KNOCKING OUT TODAY'S MISSION AT 8:00 AM"],
+    "tone": "hype"
+  },
+  {
+    "id": "mc-21",
+    "event": "early_start",
+    "template": "I'm The Captain Now",
+    "lines": ["LOOK AT ME", "I AM THE PRODUCT COMPANY RECRUITER NOW"],
+    "tone": "hype"
+  },
+  {
+    "id": "mc-22",
+    "event": "behind_1",
+    "template": "Sleeping Shaq",
+    "lines": ["PLACEMENT SEASON IN 6 MONTHS", "REAL SHIT: YOU MISSED YESTERDAY AND ARE 3 PROBLEMS IN DEBT"],
+    "tone": "roast"
+  },
+  {
+    "id": "mc-23",
+    "event": "behind_1",
+    "template": "Left Exit 12 Off Ramp",
+    "lines": ["SOLVE 3 PROBLEMS", "PROCRASTINATE 24 HOURS AND FALL BEHIND", "ME"],
+    "tone": "roast"
+  },
+  {
+    "id": "mc-24",
+    "event": "behind_3",
+    "template": "Waiting Skeleton",
+    "lines": ["WAITING FOR BANGALORE STARTUPS TO DROP DSA ROUNDS", "BRO YOU ARE 3 DAYS BEHIND WAKE UP"],
+    "tone": "roast"
+  },
+  {
+    "id": "mc-25",
+    "event": "behind_3",
+    "template": "Running Away Balloon",
+    "lines": ["MY SPRINT VELOCITY", "3 MISSED DAYS IN A ROW", "BANGALORE SWEATSHOP OFFSHORE PROJECT"],
+    "tone": "roast"
+  },
+  {
+    "id": "mc-26",
+    "event": "behind_5plus",
+    "template": "Grim Reaper Knocking Door",
+    "lines": ["DAY 1 SKIPPED", "DAY 3 SKIPPED", "DAY 5 SKIPPED", "YOU ARE QUITTING SLOWLY"],
+    "tone": "roast"
+  },
+  {
+    "id": "mc-27",
+    "event": "behind_5plus",
+    "template": "A train hitting a school bus",
+    "lines": ["MY PEACE OF MIND", "REALITY ENGINE SHOWING 5+ DAYS BACKLOG"],
+    "tone": "roast"
+  },
+  {
+    "id": "mc-28",
+    "event": "behind_7plus",
+    "template": "Sad Pablo Escobar",
+    "lines": ["STARE AT THE 7-DAY BACKLOG", "WE RE NOT ROASTING YOU ANYMORE. JUST OPEN ONE PROBLEM AND CLICK START RECOVERY."],
+    "tone": "self"
+  },
+  {
+    "id": "mc-29",
+    "event": "behind_7plus",
+    "template": "Soldier protecting sleeping child",
+    "lines": ["DSA RECOVERY PROTOCOL", "ME GETTING BACK ON THE HORSE AFTER A BRUTAL WEEK"],
+    "tone": "self"
+  },
+  {
+    "id": "mc-30",
+    "event": "streak_3",
+    "template": "Always Has Been",
+    "lines": ["WAIT, IT S ALL JUST TWO POINTERS AND SLIDING WINDOW?", "ALWAYS HAS BEEN. 3 DAYS STRONG."],
+    "tone": "hype"
+  },
+  {
+    "id": "mc-31",
+    "event": "streak_7",
+    "template": "Anakin Padme 4 Panel",
+    "lines": ["I FINISHED A 7-DAY STREAK", "THAT MEANS WE EARNED A STREAK FREEZE RIGHT?", "THAT MEANS WE RELAX RIGHT?", "WE DO TOMORROW'S PROBLEMS ON TIME."],
+    "tone": "self"
+  },
+  {
+    "id": "mc-32",
+    "event": "streak_14",
+    "template": "Expanding Brain",
+    "lines": ["BRUTE FORCE O(N^2)", "SORT AND BINARY SEARCH O(N LOG N)", "HASH MAP WITH O(1) LOOKUPS", "14-DAY STREAK AUTOMATIC PATTERN RECOGNITION"],
+    "tone": "hype"
+  },
+  {
+    "id": "mc-33",
+    "event": "streak_21",
+    "template": "They're The Same Picture",
+    "lines": ["CORPORATE FAANG INTERVIEWER", "THE 21-DAY STREAK MONSTER I HAVE BECOME", "THEY ARE THE SAME PICTURE"],
+    "tone": "hype"
+  },
+  {
+    "id": "mc-34",
+    "event": "streak_30",
+    "template": "Look At Me",
+    "lines": ["LOOK AT ME", "30 DAYS DEEP. THE FEAR HAS TURNED INTO VELOCITY."],
+    "tone": "hype"
+  },
+  {
+    "id": "mc-35",
+    "event": "level_up",
+    "template": "Gus Fring we are not the same",
+    "lines": ["YOU MEMORIZE LEETCODE SOLUTIONS", "I DERIVED THE 2D DP STATE TRANSITION IN MY HEAD. WE ARE NOT THE SAME."],
+    "tone": "hype"
+  },
+  {
+    "id": "mc-36",
+    "event": "level_up",
+    "template": "Ancient Aliens",
+    "lines": ["HOW DID HE RECOGNIZE THE MONOTONIC STACK IN 30 SECONDS?", "LEVEL UP ASCENSION."],
+    "tone": "hype"
+  },
+  {
+    "id": "mc-37",
+    "event": "boss_win",
+    "template": "spiderman pointing at spiderman",
+    "lines": ["THE 35-MINUTE BOSS PROBLEM", "ME WHO PRACTICED 10 PROBLEMS IN THIS NODE"],
+    "tone": "hype"
+  },
+  {
+    "id": "mc-38",
+    "event": "boss_win",
+    "template": "Absolute Cinema",
+    "lines": ["SUBMITTING THE BOSS HARD PROBLEM", "ALL TEST CASES PASSED WITH 4 MINUTES REMAINING"],
+    "tone": "hype"
+  },
+  {
+    "id": "mc-39",
+    "event": "boss_lose",
+    "template": "Sad Pablo Escobar",
+    "lines": ["35 MINUTES EXPIRED", "BOSS SMOKED ME ON TIME LIMIT EXCEEDED"],
+    "tone": "self"
+  },
+  {
+    "id": "mc-40",
+    "event": "boss_lose",
+    "template": "Monkey Puppet",
+    "lines": ["ME PRETENDING I DIDN'T JUST GET HUMBLED BY A HARD GRAPH BOSS PROBLEM", "LOOKING AT TOMORROW'S REVISIT QUEUE"],
+    "tone": "self"
+  },
+  {
+    "id": "mc-41",
+    "event": "mock_day",
+    "template": "Two guys on a bus",
+    "lines": ["MOCK INTERVIEWER EXPECTING ME TO CRUMBLE", "ME WHO SPRINTED 43 DAYS OF FAANG PATTERNS"],
+    "tone": "self"
+  },
+  {
+    "id": "mc-42",
+    "event": "mock_day",
+    "template": "Boardroom Meeting Suggestion",
+    "lines": ["HOW DO WE EVALUATE HIS CODING ABILITY?", "ASK 15 TRICK QUESTIONS", "ASK FOR RED-BLACK TREE BALANCING", "JUST GIVE HIM TWO UNSEEN MEDIUMS IN 45 MINUTES"],
+    "tone": "self"
+  },
+  {
+    "id": "mc-43",
+    "event": "revisit_due",
+    "template": "Bernie Sanders Once Again Asking",
+    "lines": ["I AM ONCE AGAIN ASKING YOU", "TO PROVE YOU ACTUALLY LEARNED THAT HASHMAP PROBLEM AND DIDN'T JUST MEMORIZE IT"],
+    "tone": "self"
+  },
+  {
+    "id": "mc-44",
+    "event": "revisit_due",
+    "template": "Scooby doo mask reveal",
+    "lines": ["LET S SEE WHO TODAY S REVISIT REALLY IS", "THE EXACT SAME EDGE CASE THAT COOKED YOU 3 DAYS AGO"],
+    "tone": "self"
+  },
+  {
+    "id": "mc-45",
+    "event": "landing",
+    "template": "Distracted Boyfriend",
+    "lines": ["MY CAMPUS PLACEMENT CHANCES", "BUILDING RANDOM AI WRAPPERS", "GRINDING 120 REAL FAANG DSA PROBLEMS"],
+    "tone": "roast"
+  },
+  {
+    "id": "mc-46",
+    "event": "landing",
+    "template": "Batman Slapping Robin",
+    "lines": ["MAYBE I CAN JUST WING THE CODING INTERVIEWS WITH GPT-4 IN THE BACKG...", "SHUT UP AND SOLVE YOUR TWO POINTERS"],
+    "tone": "roast"
+  },
+  {
+    "id": "mc-47",
+    "event": "landing",
+    "template": "Trade Offer",
+    "lines": ["I RECEIVE: 2 FOCUSED HOURS PER DAY FOR 45 DAYS", "YOU RECEIVE: ₹85 LPA CTC IN BANGALORE AND PERMANENT BRAGGING RIGHTS"],
+    "tone": "hype"
+  },
+  {
+    "id": "mc-48",
+    "event": "landing",
+    "template": "Change My Mind",
+    "lines": ["45 DAYS OF FOCUSED DSA SOLVING IS MORE VALUABLE THAN 4 YEARS OF BORING CSE LECTURES", "CHANGE MY MIND"],
+    "tone": "hype"
+  }
+]

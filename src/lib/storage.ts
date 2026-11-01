@@ -1,8 +1,9 @@
 import { Problem, ProblemProgress, ProblemStatus, UserSettings, DayCompletion, XPEvent, RevisitItem, BossCompletion, MockInterviewResult, AppState } from '@/types';
 import rawProblems from '@/data/dsa-120-problems.json';
 import { SKILL_TREE_NODES } from '@/data/skillTreeNodes';
+import { getDefaultMemeCaptions } from './memeEngine';
 
-const STORAGE_KEY = 'dsa_quest_app_state_v1';
+const STORAGE_KEY = 'dsa_quest_app_state_v2';
 
 export const DEFAULT_STATIC_START_DATE = '2026-11-01';
 
@@ -34,8 +35,13 @@ export function getInitialState(): AppState {
       streak_freezes_available: 0,
       sound_enabled: false,
       weekly_commitment: '',
+      meme_intensity: 'normal',
+      meme_frequency: 0.85,
+      show_gallery: true,
     },
     cheatSheets: defaultCheatSheets,
+    memeCaptions: getDefaultMemeCaptions(),
+    memeEvents: [],
   };
 }
 
@@ -59,7 +65,6 @@ export function loadStoredState(): AppState {
     }
     const parsed = JSON.parse(raw) as Partial<AppState>;
 
-    // Ensure problems is always authoritative 120 problems
     const state: AppState = {
       problems: rawProblems as Problem[],
       progress: parsed.progress || {},
@@ -72,13 +77,22 @@ export function loadStoredState(): AppState {
         start_date: parsed.settings?.start_date || getDefaultStartDate(),
         daily_target: parsed.settings?.daily_target || 3,
         streak_freezes_available: parsed.settings?.streak_freezes_available ?? 0,
-        sound_enabled: parsed.settings?.sound_enabled ?? false,
+        sound_enabled: false, // Strictly silent
         weekly_commitment: parsed.settings?.weekly_commitment || '',
+        meme_intensity: parsed.settings?.meme_intensity || 'normal',
+        meme_frequency: parsed.settings?.meme_frequency ?? 0.85,
+        show_gallery: parsed.settings?.show_gallery ?? true,
       },
       cheatSheets: {
         ...getInitialState().cheatSheets,
         ...(parsed.cheatSheets || {}),
       },
+      memeCaptions:
+        parsed.memeCaptions && parsed.memeCaptions.length > 0
+          ? parsed.memeCaptions
+          : getDefaultMemeCaptions(),
+      memeEvents: parsed.memeEvents || [],
+      customTemplates: parsed.customTemplates || [],
     };
     return state;
   } catch (err) {
@@ -114,10 +128,15 @@ export function importStateFromJSON(jsonStr: string): AppState {
       start_date: parsed.settings?.start_date || getDefaultStartDate(),
       daily_target: parsed.settings?.daily_target || 3,
       streak_freezes_available: parsed.settings?.streak_freezes_available ?? 0,
-      sound_enabled: parsed.settings?.sound_enabled ?? false,
+      sound_enabled: false,
       weekly_commitment: parsed.settings?.weekly_commitment || '',
+      meme_intensity: parsed.settings?.meme_intensity || 'normal',
+      meme_frequency: parsed.settings?.meme_frequency ?? 0.85,
+      show_gallery: parsed.settings?.show_gallery ?? true,
     },
     cheatSheets: parsed.cheatSheets || getInitialState().cheatSheets,
+    memeCaptions: parsed.memeCaptions || getDefaultMemeCaptions(),
+    memeEvents: parsed.memeEvents || [],
   };
   saveStoredState(state);
   return state;

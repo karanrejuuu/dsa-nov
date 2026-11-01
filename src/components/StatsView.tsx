@@ -8,8 +8,6 @@ import {
   AlertTriangle,
   Download,
   Upload,
-  Volume2,
-  VolumeX,
   Swords,
   Timer,
   CheckCircle2,
@@ -18,11 +16,15 @@ import {
   RefreshCw,
   Flame,
   ExternalLink,
+  Smile,
+  Sliders,
 } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { ProblemLink } from '@/components/ProblemLink';
 import { SKILL_TREE_NODES } from '@/data/skillTreeNodes';
+import { MemeGallery } from '@/components/MemeGallery';
 import { soundManager } from '@/lib/sound';
+import { MemeIntensity } from '@/types';
 
 export const StatsView: React.FC = () => {
   const {
@@ -39,7 +41,7 @@ export const StatsView: React.FC = () => {
     resetData,
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'heatmap' | 'revisits' | 'weakspots' | 'mocks' | 'settings'>('heatmap');
+  const [activeTab, setActiveTab] = useState<'heatmap' | 'revisits' | 'weakspots' | 'mocks' | 'memes' | 'settings'>('heatmap');
 
   // Mock interview state
   const [selectedMockDay, setSelectedMockDay] = useState<42 | 43 | 44 | 45>(44);
@@ -207,6 +209,18 @@ export const StatsView: React.FC = () => {
           }`}
         >
           Mocks (42-45)
+        </button>
+
+        <button
+          onClick={() => setActiveTab('memes')}
+          className={`py-2 px-3 rounded-xl border transition-all cursor-pointer flex-shrink-0 flex items-center gap-1.5 ${
+            activeTab === 'memes'
+              ? 'bg-cyan-500 text-slate-950 border-cyan-400'
+              : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+          }`}
+        >
+          <Smile className="w-3.5 h-3.5" />
+          <span>Meme Grimoire</span>
         </button>
 
         <button
@@ -513,12 +527,17 @@ export const StatsView: React.FC = () => {
         </div>
       )}
 
-      {/* Tab 5: Settings & Sync */}
+      {/* Tab 5: Meme Grimoire */}
+      {activeTab === 'memes' && (
+        <MemeGallery />
+      )}
+
+      {/* Tab 6: Settings & Sync */}
       {activeTab === 'settings' && (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-5">
           <div className="border-b border-slate-800 pb-3">
             <span className="text-[11px] font-mono font-bold uppercase text-cyan-400">
-              CONFIG & CLOUD SYNC
+              CONFIG & MEME SETTINGS
             </span>
             <h2 className="text-xl font-bold text-white mt-0.5">Settings</h2>
           </div>
@@ -539,29 +558,74 @@ export const StatsView: React.FC = () => {
             </p>
           </div>
 
-          {/* Sound Toggle */}
-          <div className="flex items-center justify-between pt-2 border-t border-slate-800">
-            <div>
-              <span className="text-sm font-bold text-white block">Synthesized Audio Feedback</span>
-              <span className="text-xs text-slate-400">Web Audio chimes for solves and level-ups</span>
+          {/* Meme Intensity Selector */}
+          <div className="pt-3 border-t border-slate-800 space-y-2">
+            <label className="text-xs font-mono font-bold uppercase text-slate-300 block">
+              Meme Roast Intensity
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { key: 'chill', label: 'Chill', desc: 'Hype only, gentle self' },
+                { key: 'normal', label: 'Normal', desc: 'Balanced roasts & hype' },
+                { key: 'savage', label: 'Savage', desc: 'Full roasts & cooked doom' },
+              ].map((lvl) => {
+                const isActive = (state.settings.meme_intensity || 'normal') === lvl.key;
+                return (
+                  <button
+                    key={lvl.key}
+                    onClick={() => updateSettings({ meme_intensity: lvl.key as MemeIntensity })}
+                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                      isActive
+                        ? 'bg-cyan-500/20 border-cyan-400 text-white ring-1 ring-cyan-400/50'
+                        : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <span className="text-xs font-bold block">{lvl.label}</span>
+                    <span className="text-[10px] text-slate-400 leading-tight block mt-0.5">{lvl.desc}</span>
+                  </button>
+                );
+              })}
             </div>
-            <button
-              onClick={() => updateSettings({ sound_enabled: !state.settings.sound_enabled })}
-              className={`p-2 rounded-xl border cursor-pointer ${
-                state.settings.sound_enabled
-                  ? 'bg-cyan-500 text-slate-950 border-cyan-400'
-                  : 'bg-slate-800 text-slate-400 border-slate-700'
-              }`}
-            >
-              {state.settings.sound_enabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
-            </button>
+          </div>
+
+          {/* Meme Frequency Control */}
+          <div className="pt-3 border-t border-slate-800 space-y-2">
+            <div className="flex items-center justify-between text-xs font-mono">
+              <span className="font-bold text-slate-300 uppercase">Meme Occurrence Rate</span>
+              <span className="text-cyan-400 font-bold">
+                {Math.round((state.settings.meme_frequency ?? 0.85) * 100)}% of events
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={state.settings.meme_frequency ?? 0.85}
+              onChange={(e) => updateSettings({ meme_frequency: parseFloat(e.target.value) })}
+              className="w-full accent-cyan-400 bg-slate-800 rounded-lg cursor-pointer"
+            />
+            <p className="text-[11px] text-slate-500">
+              Set to ~85% so plain UI appears occasionally to keep meme drops punchy.
+            </p>
+          </div>
+
+          {/* Audio Spec Status */}
+          <div className="flex items-center justify-between pt-3 border-t border-slate-800 text-xs">
+            <div>
+              <span className="font-bold text-white block">Sound Effects</span>
+              <span className="text-slate-400">Silent mode strictly enforced per specification</span>
+            </div>
+            <span className="px-2.5 py-1 bg-slate-800 rounded-lg font-mono text-slate-400 border border-slate-700">
+              Silent (Muted)
+            </span>
           </div>
 
           {/* Streak Freeze Inventory */}
           <div className="flex items-center justify-between pt-2 border-t border-slate-800 text-xs">
             <div>
               <span className="font-bold text-white block">Streak Freezes Earned</span>
-              <span className="text-slate-400">1 earned per 7-day streak streak milestone</span>
+              <span className="text-slate-400">1 earned per 7-day streak milestone</span>
             </div>
             <span className="font-mono font-bold text-amber-400 text-base">
               {state.settings.streak_freezes_available} available
@@ -591,7 +655,7 @@ export const StatsView: React.FC = () => {
           </div>
 
           {/* Danger Zone: Reset Data */}
-          <div className="pt-4 border-t border-slate-800">
+          <div className="pt-4 border-t border-slate-800 flex items-center justify-between">
             <button
               onClick={() => {
                 if (confirm('Are you sure you want to reset all progress, streak, and XP?')) {
@@ -602,6 +666,10 @@ export const StatsView: React.FC = () => {
             >
               Reset all sprint progress to Day 1
             </button>
+
+            <span className="text-[10px] font-mono text-slate-600">
+              Templates via Imgflip
+            </span>
           </div>
         </div>
       )}

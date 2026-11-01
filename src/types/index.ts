@@ -32,12 +32,70 @@ export interface ProblemProgress {
   last_attempt_at?: string;
 }
 
+export type MemeTone = 'hype' | 'self' | 'roast';
+export type MemeIntensity = 'chill' | 'normal' | 'savage';
+
+export type MemeEventName =
+  | 'solved_clean'
+  | 'solved_hint'
+  | 'needed_solution'
+  | 'skipped'
+  | 'day_complete'
+  | 'early_start'
+  | 'behind_1'
+  | 'behind_3'
+  | 'behind_5plus'
+  | 'behind_7plus'
+  | 'streak_3'
+  | 'streak_7'
+  | 'streak_14'
+  | 'streak_21'
+  | 'streak_30'
+  | 'level_up'
+  | 'boss_win'
+  | 'boss_lose'
+  | 'mock_day'
+  | 'revisit_due'
+  | 'landing';
+
+export interface MemeTemplate {
+  imgflip_id: string;
+  name: string;
+  url: string;
+  cached_url?: string;
+  box_count: number;
+  whitelisted: boolean;
+}
+
+export interface MemeCaption {
+  id: string;
+  event: MemeEventName;
+  template_name: string;
+  lines: string[];
+  tone: MemeTone;
+  enabled: boolean;
+  created_by: 'system' | 'user';
+  times_shown: number;
+}
+
+export interface MemeEventRecord {
+  id: string;
+  caption_id: string;
+  event: MemeEventName;
+  shown_at: string;
+  liked: boolean;
+  hidden: boolean;
+}
+
 export interface UserSettings {
   start_date: string; // YYYY-MM-DD
   daily_target: number;
   streak_freezes_available: number;
   sound_enabled: boolean;
   weekly_commitment?: string;
+  meme_intensity: MemeIntensity; // 'chill' | 'normal' | 'savage'
+  meme_frequency: number; // default 0.85
+  show_gallery: boolean; // default true
 }
 
 export interface DayCompletion {
@@ -93,4 +151,7 @@ export interface AppState {
   mockInterviews: Record<number, MockInterviewResult>;
   settings: UserSettings;
   cheatSheets: Record<string, string[]>;
+  memeCaptions: MemeCaption[];
+  memeEvents: MemeEventRecord[];
+  customTemplates?: MemeTemplate[];
 }
