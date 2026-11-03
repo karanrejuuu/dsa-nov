@@ -128,26 +128,15 @@ export function getNodeSummaries(
     const cleanRate = solvedCount > 0 ? (cleanCount / solvedCount) * 100 : 0;
     const bossPassed = !!bossCompletions[nodeData.key]?.passed;
 
-    let state: NodeState = 'Locked';
-    let unlockRequirementText: string | undefined;
+    // All nodes are unlocked and accessible by default
+    let state: NodeState = 'Available';
 
-    if (i === 0) {
-      // First node is unlocked by default
-      if (solvedCount === 0) state = 'Available';
-      else if (solveRate >= 70 && bossPassed) state = 'Mastered';
-      else state = 'In progress';
+    if (solvedCount === 0) {
+      state = 'Available';
+    } else if (solveRate >= 70 && bossPassed) {
+      state = 'Mastered';
     } else {
-      const prevNode = result[i - 1];
-      const prevUnlocked = prevNode && prevNode.solveRate >= 70;
-
-      if (!prevUnlocked) {
-        state = 'Locked';
-        unlockRequirementText = `Unlocks at 70% of ${prevNode ? prevNode.name : 'previous pattern'}`;
-      } else {
-        if (solvedCount === 0) state = 'Available';
-        else if (solveRate >= 70 && bossPassed) state = 'Mastered';
-        else state = 'In progress';
-      }
+      state = 'In progress';
     }
 
     result.push({
@@ -162,7 +151,7 @@ export function getNodeSummaries(
       solveRate: Math.round(solveRate),
       cleanRate: Math.round(cleanRate),
       state,
-      unlockRequirementText,
+      unlockRequirementText: undefined,
       bossFightCompleted: bossPassed,
     });
   }

@@ -24,7 +24,7 @@ import { ProblemLink } from '@/components/ProblemLink';
 import { soundManager } from '@/lib/sound';
 
 export const SkillTreeView: React.FC = () => {
-  const { state, openProblem, updateCheatSheet, recordBossFight } = useApp();
+  const { state, openProblem, updateCheatSheet, recordBossFight, updateProblemStatus } = useApp();
   const [selectedNode, setSelectedNode] = useState<SkillNodeData | null>(null);
 
   // Boss Fight Timer state
@@ -121,7 +121,7 @@ export const SkillTreeView: React.FC = () => {
             </span>
             <h1 className="text-2xl font-black text-white tracking-tight">14 Core DSA Nodes</h1>
             <p className="text-xs text-slate-400 mt-1">
-              Nodes unlock when the previous node reaches ≥ 70% solve rate. Master each node with its 35-minute Boss Fight!
+              All 14 pattern modules are unlocked and accessible. Dive into any topic anytime or follow the recommended sequence. Master each node with its 35-minute Boss Fight!
             </p>
           </div>
           <div className="text-right">
@@ -140,7 +140,6 @@ export const SkillTreeView: React.FC = () => {
 
         {SKILL_TREE_NODES.map((node, index) => {
           const summary = nodeSummaries[index];
-          const isLocked = summary.state === 'Locked';
           const isMastered = summary.state === 'Mastered';
           const isInProgress = summary.state === 'In progress';
           const isAvailable = summary.state === 'Available';
@@ -148,19 +147,17 @@ export const SkillTreeView: React.FC = () => {
           return (
             <motion.div
               key={node.key}
-              whileHover={{ scale: isLocked ? 1 : 1.01 }}
+              whileHover={{ scale: 1.01 }}
               onClick={() => {
-                if (!isLocked) {
-                  setSelectedNode(node);
-                  soundManager.playClick();
-                }
+                setSelectedNode(node);
+                soundManager.playClick();
               }}
-              className={`relative bg-slate-900 border rounded-2xl p-4 sm:p-5 transition-all shadow-md ${
-                isLocked
-                  ? 'opacity-60 border-slate-800 cursor-not-allowed'
-                  : isMastered
-                  ? 'border-emerald-500/50 bg-emerald-950/15 shadow-emerald-500/10 cursor-pointer'
-                  : 'border-slate-800 hover:border-cyan-500/50 cursor-pointer'
+              className={`relative bg-slate-900 border rounded-2xl p-4 sm:p-5 transition-all shadow-md cursor-pointer ${
+                isMastered
+                  ? 'border-emerald-500/50 bg-emerald-950/15 shadow-emerald-500/10'
+                  : isInProgress
+                  ? 'border-cyan-500/50 bg-cyan-950/10 shadow-cyan-500/10'
+                  : 'border-slate-800 hover:border-cyan-500/40 hover:bg-slate-800/40'
               }`}
             >
               {/* Connector Node Icon */}
@@ -170,15 +167,11 @@ export const SkillTreeView: React.FC = () => {
                     ? 'bg-emerald-500 border-emerald-400 text-slate-950 ring-4 ring-emerald-500/20'
                     : isInProgress
                     ? 'bg-cyan-500 border-cyan-400 text-slate-950 ring-4 ring-cyan-500/20'
-                    : isAvailable
-                    ? 'bg-slate-800 border-cyan-400 text-cyan-400'
-                    : 'bg-slate-900 border-slate-700 text-slate-600'
+                    : 'bg-slate-800 border-slate-600 text-slate-300'
                 }`}
               >
                 {isMastered ? (
                   <CheckCircle2 className="w-4 h-4" />
-                ) : isLocked ? (
-                  <Lock className="w-3.5 h-3.5" />
                 ) : (
                   <span>{node.order}</span>
                 )}
@@ -197,9 +190,7 @@ export const SkillTreeView: React.FC = () => {
                           ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
                           : isInProgress
                           ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40'
-                          : isAvailable
-                          ? 'bg-sky-500/20 text-sky-400 border border-sky-500/40'
-                          : 'bg-slate-800 text-slate-500 border border-slate-700'
+                          : 'bg-slate-800 text-slate-400 border border-slate-700'
                       }`}
                     >
                       {summary.state}
@@ -211,36 +202,28 @@ export const SkillTreeView: React.FC = () => {
                     {isMastered && <Trophy className="w-4 h-4 text-emerald-400" />}
                   </h3>
 
-                  {isLocked && summary.unlockRequirementText ? (
-                    <p className="text-xs text-amber-400 font-mono mt-1">
-                      🔒 {summary.unlockRequirementText}
-                    </p>
-                  ) : (
-                    <p className="text-xs text-slate-400">
-                      {summary.solvedCount} of {summary.totalProblems} solved ({summary.solveRate}%)
-                      {summary.bossFightCompleted && ' · ⚔️ Boss Defeated'}
-                    </p>
-                  )}
+                  <p className="text-xs text-slate-400">
+                    {summary.solvedCount} of {summary.totalProblems} solved ({summary.solveRate}%)
+                    {summary.bossFightCompleted && ' · ⚔️ Boss Defeated'}
+                  </p>
                 </div>
 
                 {/* Progress Ring / Teaser */}
-                {!isLocked && (
-                  <div className="flex items-center gap-4">
-                    {/* Progress Percentage Circular Metric */}
-                    <div className="text-right">
-                      <div className="text-sm font-mono font-bold text-white">
-                        {summary.solveRate}%
-                      </div>
-                      <div className="text-[10px] font-mono text-slate-400">
-                        {summary.cleanRate}% clean
-                      </div>
+                <div className="flex items-center gap-4">
+                  {/* Progress Percentage Circular Metric */}
+                  <div className="text-right">
+                    <div className="text-sm font-mono font-bold text-white">
+                      {summary.solveRate}%
                     </div>
-
-                    <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-cyan-400 group-hover:bg-cyan-500 group-hover:text-slate-950 transition-colors">
-                      <ChevronRight className="w-5 h-5" />
+                    <div className="text-[10px] font-mono text-slate-400">
+                      {summary.cleanRate}% clean
                     </div>
                   </div>
-                )}
+
+                  <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-cyan-400 group-hover:bg-cyan-500 group-hover:text-slate-950 transition-colors">
+                    <ChevronRight className="w-5 h-5" />
+                  </div>
+                </div>
               </div>
             </motion.div>
           );
@@ -380,53 +363,128 @@ export const SkillTreeView: React.FC = () => {
                   Node Problems ({selectedNode.expectedProblems} total)
                 </h3>
 
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   {state.problems
                     .filter((p) => p.node_key === selectedNode.key)
                     .map((prob) => {
                       const prog = state.progress[prob.id];
-                      const isClean = prog?.status === 'solved_clean';
-                      const isHint = prog?.status === 'solved_hint';
-                      const isSol = prog?.status === 'needed_solution';
+                      const status = prog?.status || 'not_started';
+                      const isClean = status === 'solved_clean';
+                      const isHint = status === 'solved_hint';
+                      const isSol = status === 'needed_solution';
 
                       return (
                         <div
                           key={prob.id}
-                          className="bg-slate-800/70 border border-slate-700/80 rounded-xl p-3 flex items-center justify-between gap-3"
+                          className="bg-slate-800/60 border border-slate-700/80 rounded-xl p-3 space-y-2.5 transition-colors"
                         >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <span
-                              className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
-                                isClean
-                                  ? 'bg-emerald-400 ring-2 ring-emerald-400/30'
-                                  : isHint
-                                  ? 'bg-amber-400 ring-2 ring-amber-400/30'
-                                  : isSol
-                                  ? 'bg-rose-400 ring-2 ring-rose-400/30'
-                                  : 'bg-slate-600'
-                              }`}
-                            />
-                            <span className="text-xs font-mono text-slate-400 flex-shrink-0">
-                              Day {prob.day}
-                            </span>
-                            <ProblemLink
-                              problem={prob}
-                              className="text-sm font-semibold text-white truncate"
-                              showIcon
-                            />
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span
+                                className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                  isClean
+                                    ? 'bg-emerald-400 ring-2 ring-emerald-400/30'
+                                    : isHint
+                                    ? 'bg-amber-400 ring-2 ring-amber-400/30'
+                                    : isSol
+                                    ? 'bg-rose-400 ring-2 ring-rose-400/30'
+                                    : 'bg-slate-600'
+                                }`}
+                              />
+                              <span className="text-xs font-mono text-slate-400 flex-shrink-0">
+                                Day {prob.day}
+                              </span>
+                              <span className="text-xs font-mono font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-1.5 py-0.5 rounded flex-shrink-0">
+                                LC #{prob.id}
+                              </span>
+                              <ProblemLink
+                                problem={prob}
+                                className="text-sm font-semibold text-white truncate"
+                                showIcon
+                              />
+                            </div>
+
+                            <div className="flex items-center gap-2 self-end sm:self-auto flex-shrink-0">
+                              <span
+                                className={`text-[11px] font-mono px-2 py-0.5 rounded border ${
+                                  prob.difficulty === 'Easy'
+                                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                                    : prob.difficulty === 'Medium'
+                                    ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                                    : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                                }`}
+                              >
+                                {prob.difficulty}
+                              </span>
+
+                              <button
+                                onClick={() => openProblem(prob)}
+                                className="text-xs bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 cursor-pointer transition-colors"
+                              >
+                                <span>Open</span>
+                                <ExternalLink className="w-3 h-3" />
+                              </button>
+                            </div>
                           </div>
 
-                          <span
-                            className={`text-[11px] font-mono px-2 py-0.5 rounded border flex-shrink-0 ${
-                              prob.difficulty === 'Easy'
-                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                                : prob.difficulty === 'Medium'
-                                ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-                                : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
-                            }`}
-                          >
-                            {prob.difficulty}
-                          </span>
+                          {/* Quick Status Control */}
+                          <div className="flex items-center justify-between pt-1 border-t border-slate-700/40 text-xs">
+                            <span className="text-[11px] font-mono text-slate-400">
+                              Status:{' '}
+                              <strong
+                                className={
+                                  isClean
+                                    ? 'text-emerald-400'
+                                    : isHint
+                                    ? 'text-amber-400'
+                                    : isSol
+                                    ? 'text-rose-400'
+                                    : 'text-slate-500'
+                                }
+                              >
+                                {isClean
+                                  ? 'Solved Clean (+20 XP)'
+                                  : isHint
+                                  ? 'With Hint (+10 XP)'
+                                  : isSol
+                                  ? 'Needed Solution (+5 XP)'
+                                  : 'Not Started'}
+                              </strong>
+                            </span>
+
+                            <div className="flex items-center gap-1 text-[11px] font-mono">
+                              <button
+                                onClick={() => updateProblemStatus(prob.id, 'solved_clean')}
+                                className={`px-2 py-0.5 rounded border cursor-pointer transition-all ${
+                                  isClean
+                                    ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-bold'
+                                    : 'bg-slate-900 text-slate-400 border-slate-700 hover:text-emerald-400'
+                                }`}
+                              >
+                                Clean
+                              </button>
+                              <button
+                                onClick={() => updateProblemStatus(prob.id, 'solved_hint')}
+                                className={`px-2 py-0.5 rounded border cursor-pointer transition-all ${
+                                  isHint
+                                    ? 'bg-amber-400 text-slate-950 border-amber-300 font-bold'
+                                    : 'bg-slate-900 text-slate-400 border-slate-700 hover:text-amber-400'
+                                }`}
+                              >
+                                Hint
+                              </button>
+                              <button
+                                onClick={() => updateProblemStatus(prob.id, 'needed_solution')}
+                                className={`px-2 py-0.5 rounded border cursor-pointer transition-all ${
+                                  isSol
+                                    ? 'bg-rose-500 text-white border-rose-400 font-bold'
+                                    : 'bg-slate-900 text-slate-400 border-slate-700 hover:text-rose-400'
+                                }`}
+                              >
+                                Sol.
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       );
                     })}
