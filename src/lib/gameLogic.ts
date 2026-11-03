@@ -179,11 +179,19 @@ export function calculateStreak(
     }
   }
 
-  // Calculate consecutive streak looking back from currentDayIndex or currentDayIndex - 1
-  let checkDay = currentDayIndex;
-  // If current day is not yet completed, check if streak from yesterday is still intact
+  // Find highest completed day
+  let maxCompletedDay = 0;
+  Object.keys(dayCompletions).forEach((d) => {
+    const num = Number(d);
+    if (dayCompletions[num]?.completed_at && num > maxCompletedDay) {
+      maxCompletedDay = num;
+    }
+  });
+
+  // Calculate consecutive streak looking back from highest completed day or currentDayIndex
+  let checkDay = Math.max(currentDayIndex, maxCompletedDay);
   if (!dayCompletions[checkDay]?.completed_at) {
-    checkDay = currentDayIndex - 1;
+    checkDay = Math.max(currentDayIndex - 1, maxCompletedDay);
   }
 
   while (checkDay >= 1 && dayCompletions[checkDay]?.completed_at) {

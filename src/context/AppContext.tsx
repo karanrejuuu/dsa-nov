@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import {
   Problem,
@@ -39,6 +39,9 @@ import { syncProgressToSupabase, syncDayCompletionToSupabase, syncXPEventToSupab
 interface AppContextType {
   state: AppState;
   realityStats: RealityStats;
+  activeDay: number;
+  calendarDay: number;
+  setActiveDay: (day: number) => void;
   totalXP: number;
   currentStreak: number;
   longestStreak: number;
@@ -147,6 +150,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     realityStats.currentDay,
     state.dayCompletions
   );
+
+  // Active / Viewed Day State (allows advancing ahead or reviewing past days)
+  const calendarDay = realityStats.currentDay;
+  const [activeDayState, setActiveDayState] = useState<number | null>(null);
+
+  // Load saved active day from localStorage on client mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('dsa_quest_active_day');
+      if (saved) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed) && parsed >= 1 && parsed <= 45) {
+          setActiveDayState(parsed);
+        }
+      }
+    }
+  }, []);
+
+  // Compute default day: first incomplete day or calendar day
+  const defaultDay = useMemo(() => {
+    for (let d = 1; d <= 45; d++) {
+      if (!state.dayCompletions[d]?.completed_at) {
+        return d;
+      }
+    }
+    return 45;
+  }, [state.dayCompletions]);
+
+  const activeDay = activeDayState ?? defaultDay;
+
+  const setActiveDay = useCallback((day: number) => {
+    const clamped = Math.max(1, Math.min(45, day));
+    setActiveDayState(clamped);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('dsa_quest_active_day', String(clamped));
+    }
+  }, []);
 
   // Confetti trigger
   const triggerConfetti = useCallback((burstSize: 'small' | 'large' = 'small') => {
@@ -504,6 +544,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       triggerConfetti('large');
 
+      // Advance to next day if not day 45
+      if (dayNumber < 45) {
+        setActiveDay(dayNumber + 1);
+      }
+
       // Streak milestone checks
       if ([3, 7, 14, 21, 30].includes(newStreakVal)) {
         triggerMeme(`streak_${newStreakVal}` as MemeEventName, {
@@ -511,13 +556,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           ignoreFrequency: true,
           isFullScreen: true,
         });
+      } else if (dayNumber >= calendarDay && dayNumber < 45) {
+        triggerMeme('ahead', { forceTone: 'hype', ignoreFrequency: true });
       } else {
         triggerMeme('day_complete', { forceTone: 'hype', ignoreFrequency: true });
       }
 
       return true;
     },
-    [state.problems, state.progress, currentStreak, triggerConfetti, triggerMeme]
+    [state.problems, state.progress, currentStreak, triggerConfetti, triggerMeme, setActiveDay, calendarDay]
   );
 
   const useStreakFreeze = useCallback(
@@ -692,6 +739,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       value={{
         state,
         realityStats,
+        activeDay,
+        calendarDay,
+        setActiveDay,
         totalXP,
         currentStreak,
         longestStreak,

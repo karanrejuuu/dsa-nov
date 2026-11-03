@@ -14,6 +14,8 @@ import {
   ExternalLink,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Sparkles,
   ArrowRight,
@@ -32,6 +34,9 @@ export const TodayView: React.FC = () => {
   const {
     state,
     realityStats,
+    activeDay,
+    setActiveDay,
+    calendarDay,
     totalXP,
     currentStreak,
     focusTimerSeconds,
@@ -46,6 +51,7 @@ export const TodayView: React.FC = () => {
     useStreakFreeze,
     likeCaption,
     hideCaption,
+    triggerMeme,
   } = useApp();
 
   const [expandedBacklog, setExpandedBacklog] = useState(false);
@@ -54,7 +60,7 @@ export const TodayView: React.FC = () => {
   const [showDailyMeme, setShowDailyMeme] = useState(true);
   const [dailyMeme, setDailyMeme] = useState<MemeSelectionResult | null>(null);
 
-  const currentDay = realityStats.currentDay;
+  const currentDay = activeDay;
   const levelInfo = getLevelInfo(totalXP);
 
   // Pick Daily Meme (keyed by day, 7-day no-repeat)
@@ -63,7 +69,7 @@ export const TodayView: React.FC = () => {
       getMeme('day_complete', state, { ignoreFrequency: true }) ||
       getMeme('landing', state, { ignoreFrequency: true });
     setDailyMeme(meme);
-  }, [currentDay, state.settings.meme_intensity]);
+  }, [activeDay, state.settings.meme_intensity]);
 
   // Today's scheduled problems
   const todayProblems = state.problems.filter((p) => p.day === currentDay);
@@ -132,10 +138,57 @@ export const TodayView: React.FC = () => {
             <div className="text-[11px] font-mono font-bold tracking-widest text-cyan-400 uppercase">
               45-DAY FAANG SPRINTS
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-2">
-              <span>Day {currentDay}</span>
-              <span className="text-slate-500 text-lg font-normal">/ 45</span>
-            </h1>
+
+            <div className="flex items-center gap-2 mt-0.5">
+              <button
+                onClick={() => setActiveDay(Math.max(1, activeDay - 1))}
+                disabled={activeDay <= 1}
+                className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors border border-slate-700/60"
+                title="Previous Day"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+
+              <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-1.5">
+                <span>Day {activeDay}</span>
+                <span className="text-slate-500 text-lg font-normal">/ 45</span>
+              </h1>
+
+              <button
+                onClick={() => setActiveDay(Math.min(45, activeDay + 1))}
+                disabled={activeDay >= 45}
+                className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors border border-slate-700/60"
+                title="Next Day"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Pacing status badge */}
+            <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+              {activeDay > calendarDay ? (
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" />
+                  <span>Working Ahead (+{activeDay - calendarDay}d)</span>
+                </span>
+              ) : activeDay < calendarDay ? (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40">
+                    Reviewing Day {activeDay}
+                  </span>
+                  <button
+                    onClick={() => setActiveDay(calendarDay)}
+                    className="text-[10px] font-mono text-cyan-400 hover:underline cursor-pointer"
+                  >
+                    Jump to Today (Day {calendarDay})
+                  </button>
+                </div>
+              ) : (
+                <span className="text-[10px] font-mono text-slate-400">
+                  Calendar Today
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
@@ -558,28 +611,53 @@ export const TodayView: React.FC = () => {
         )}
       </div>
 
-      {/* Complete Day Button */}
+      {/* Complete Day / Next Day Progression Section */}
       <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 text-center space-y-3">
-        <button
-          onClick={() => completeDay(currentDay)}
-          disabled={!allTodayMarked || isDayCompleted}
-          className={`w-full py-4 px-6 rounded-2xl font-black text-base flex items-center justify-center gap-2.5 transition-all shadow-xl ${
-            isDayCompleted
-              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 cursor-default'
-              : allTodayMarked
-              ? 'bg-gradient-to-r from-cyan-400 via-emerald-400 to-teal-400 text-slate-950 shadow-cyan-500/30 hover:shadow-cyan-500/50 scale-[1.01] cursor-pointer'
-              : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700/50'
-          }`}
-        >
-          <Sparkles className="w-5 h-5" />
-          <span>
-            {isDayCompleted
-              ? `Day ${currentDay} Locked In (+30 XP Claimed)`
-              : allTodayMarked
-              ? `Lock it in (+30 Bonus XP)`
-              : `Mark All ${todayProblems.length} Problems to Lock in`}
-          </span>
-        </button>
+        {isDayCompleted ? (
+          <div className="space-y-3">
+            <div className="flex items-center justify-center gap-2 text-emerald-400 font-bold text-sm sm:text-base bg-emerald-500/10 border border-emerald-500/30 py-3 px-4 rounded-xl">
+              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+              <span>Day {currentDay} Mission Locked In! (+30 XP Claimed)</span>
+            </div>
+
+            {activeDay < 45 && (
+              <button
+                onClick={() => {
+                  const nextDay = activeDay + 1;
+                  setActiveDay(nextDay);
+                  if (nextDay > calendarDay) {
+                    triggerMeme('ahead', { forceTone: 'hype', ignoreFrequency: true });
+                  }
+                }}
+                className="w-full py-4 px-6 rounded-2xl font-black text-base bg-gradient-to-r from-cyan-400 via-emerald-400 to-teal-400 text-slate-950 shadow-xl shadow-cyan-500/25 hover:scale-[1.01] cursor-pointer flex items-center justify-center gap-2.5 transition-all"
+              >
+                <span>
+                  {activeDay >= calendarDay
+                    ? `Start Day ${activeDay + 1} Early (Work Ahead) →`
+                    : `Proceed to Day ${activeDay + 1} Mission →`}
+                </span>
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+        ) : (
+          <button
+            onClick={() => completeDay(currentDay)}
+            disabled={!allTodayMarked}
+            className={`w-full py-4 px-6 rounded-2xl font-black text-base flex items-center justify-center gap-2.5 transition-all shadow-xl ${
+              allTodayMarked
+                ? 'bg-gradient-to-r from-cyan-400 via-emerald-400 to-teal-400 text-slate-950 shadow-cyan-500/30 hover:shadow-cyan-500/50 scale-[1.01] cursor-pointer'
+                : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700/50'
+            }`}
+          >
+            <Sparkles className="w-5 h-5" />
+            <span>
+              {allTodayMarked
+                ? `Lock Day ${currentDay} in (+30 Bonus XP)`
+                : `Mark All ${todayProblems.length} Problems to Lock in`}
+            </span>
+          </button>
+        )}
 
         {/* Streak freeze helper */}
         {state.settings.streak_freezes_available > 0 && !isDayCompleted && (
