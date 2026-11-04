@@ -467,6 +467,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return next;
       });
 
+      // If solved or skipped, clear active problem from timer split
+      if (status !== 'in_progress') {
+        setActiveProblem(null);
+      }
+
       // Feedback & Memes
       if (status === 'solved_clean') {
         triggerConfetti('small');

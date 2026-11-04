@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle2, HelpCircle, AlertCircle, Clock, Save, Edit3 } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
@@ -12,18 +12,29 @@ export const ReturnModal: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<ProblemStatus>('solved_clean');
   const [notes, setNotes] = useState('');
   const [timeTakenMinutes, setTimeTakenMinutes] = useState(20);
+  const initializedProblemIdRef = useRef<number | null>(null);
 
+  // Initialize form state ONLY once per opened problem (never overwrite while user is interacting!)
   useEffect(() => {
     if (returnModalProblem) {
-      const existingProg = state.progress[returnModalProblem.id];
-      const splitSeconds = problemSplitTimes[returnModalProblem.id] || 0;
-      const initialMinutes = Math.max(5, Math.round(splitSeconds / 60)) || 15;
+      if (initializedProblemIdRef.current !== returnModalProblem.id) {
+        initializedProblemIdRef.current = returnModalProblem.id;
+        const existingProg = state.progress[returnModalProblem.id];
+        const splitSeconds = problemSplitTimes[returnModalProblem.id] || 0;
+        const initialMinutes = Math.max(5, Math.round(splitSeconds / 60)) || 15;
 
-      setSelectedStatus(existingProg?.status === 'in_progress' ? 'solved_clean' : (existingProg?.status || 'solved_clean'));
-      setNotes(existingProg?.notes || '');
-      setTimeTakenMinutes(initialMinutes);
+        setSelectedStatus(
+          existingProg?.status && existingProg.status !== 'in_progress' && existingProg.status !== 'not_started'
+            ? existingProg.status
+            : 'solved_clean'
+        );
+        setNotes(existingProg?.notes || '');
+        setTimeTakenMinutes(initialMinutes);
+      }
+    } else {
+      initializedProblemIdRef.current = null;
     }
-  }, [returnModalProblem, state.progress, problemSplitTimes]);
+  }, [returnModalProblem?.id]);
 
   if (!returnModalProblem) return null;
 
